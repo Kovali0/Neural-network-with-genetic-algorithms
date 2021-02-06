@@ -2,59 +2,45 @@
 Main program
 """
 import numpy as np
-import random as rand
+from neural_network import NeuralNetwork, Layer
 
 
-def ReLu(x):
-    return np.maximum(0, x)
-
-
-def ReLu_Derivative(x):
-    return 0 if x <= 0 else 1
-
-
-class Layer:
-    def __init__(self, size, activation_function, input_size):
-        self.size = size
-        self.activation_fun = activation_function
-        self.input_size = input_size
-        self.weights_number = size * input_size
-        self.weights = [np.random.randn(input_size) for _ in range(size)]
-        self.biases = [np.random.randn() for _ in range(size)]
-
-
-class NeuralNetwork:
-    def __init__(self):
-        self.l1 = Layer(2, 0, 2)
-        self.l2 = Layer(3, 0, self.l1.size)
-        self.l3 = Layer(2, 0, self.l2.size)
-        self.layers = []
-        self.layers.append(self.l1)
-        self.layers.append(self.l2)
-        self.layers.append(self.l3)
-        self.layers_number = 3
-
-    def train(self, sample, labels, epochs):
-        pass
-
-    def forward_propagation(self, sample, layer):
-        activation_output = []
-        for i, neuron_weights in enumerate(layer.weights):
-            a = neuron_weights.dot(sample) + layer.biases[i]
-            activation_output.append(ReLu(a))
-        return activation_output
-
-    def predict(self, sample):
-        prediction = sample
-        for layer in self.layers:
-            prediction = self.forward_propagation(prediction, layer)
-        return prediction
+# Globals
+x_train = np.arange(200).reshape((100, 2))
+y_train = np.array([1 if x < 50 else 0 for x in range(100)])
+population = 20
 
 
 def main():
-    nn = NeuralNetwork()
-    print(nn.predict([1, 1]))
+    generation = 0
+    best_accuracy = 0.0
+    networks = [NeuralNetwork() for _ in range(population)]
 
+    while best_accuracy < 0.9 or generation < 101:
+        generation += 1
+        print("========== Generation number ", generation, " ==========")
+
+        for nn in networks:
+            good_prediction = 0
+            for i, x in enumerate(x_train):
+                pred_1, pred_2 = nn.predict(x)
+                if pred_1 > pred_2 and y_train[i] == 1 or pred_1 < pred_2 and y_train[i] == 0:
+                    good_prediction += 1
+            nn.accuracy = good_prediction / np.size(x_train)
+
+        networks = sorted(networks, key=lambda z: z.accuracy)
+        networks.reverse()
+        for nn in networks:
+            if nn.accuracy > best_accuracy:
+                best_accuracy = nn.accuracy
+                print('Best Accuracy: ', best_accuracy)
+                optimal_weights = []
+                for layer in nn.layers:
+                    optimal_weights.append(layer.weights)
+                print(optimal_weights)
+
+        for i in range(4):
+          pass
 
 if __name__ == '__main__':
     main()
