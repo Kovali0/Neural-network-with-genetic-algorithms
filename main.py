@@ -1,22 +1,28 @@
 """
 Main program
 """
+import random
 import numpy as np
 from neural_network import NeuralNetwork, Layer
 
 
+def generate_samples(size, mean_x, mean_y, standard_deviation_x, standard_deviation_y):
+    return np.random.default_rng().normal((mean_x, mean_y), (standard_deviation_x, standard_deviation_y), (size, 2))
+
 # Globals
-x_train = np.arange(200).reshape((100, 2))
-y_train = np.array([1 if x < 50 else 0 for x in range(100)])
+x_train = np.arange(400).reshape((200, 2))
+y_train = np.array([1 if x < 100 else 0 for x in range(200)])
 population = 20
+mutation_chance = 2
 
 
 def main():
     generation = 0
     best_accuracy = 0.0
     networks = [NeuralNetwork() for _ in range(population)]
+    optimal_weights = []
 
-    while best_accuracy < 0.9 or generation < 101:
+    while best_accuracy < 0.9 and generation < 100:
         generation += 1
         print("========== Generation number ", generation, " ==========")
 
@@ -30,17 +36,34 @@ def main():
 
         networks = sorted(networks, key=lambda z: z.accuracy)
         networks.reverse()
+        print(networks[0].layers[0].weights)
         for nn in networks:
             if nn.accuracy > best_accuracy:
                 best_accuracy = nn.accuracy
                 print('Best Accuracy: ', best_accuracy)
-                optimal_weights = []
                 for layer in nn.layers:
                     optimal_weights.append(layer.weights)
                 print(optimal_weights)
 
-        for i in range(4):
-          pass
+        new_generation = []
+        for i in range(5):
+            new_generation.append(networks[i])
+            for j in range(3):
+                nn = networks[i]
+                random_cross = random.randint(0, 5)
+                for idx, layer in enumerate(nn.layers):
+                    locus = random.randint(0, 1)
+                    layer.weights[locus] = networks[random_cross].layers[idx].weights[locus]
+                    if random.randint(0, 100) <= mutation_chance:
+                        print("MUTATION!")
+                        #layer.weights[0] = np.negative(layer.weights[0])
+                        layer.weights[locus] = np.random.randn(np.size(layer.weights[locus]))
+                new_generation.append(nn)
+        networks = new_generation
+
+    print("Over 0.90 accuracy")
+    print(best_accuracy)
+
 
 if __name__ == '__main__':
     main()
