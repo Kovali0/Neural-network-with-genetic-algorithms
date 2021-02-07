@@ -10,7 +10,7 @@ def ReLu(x):
 
 
 def ReLu_Derivative(x):
-    return 0 if x <= 0 else 1
+    return np.where(x <= 0, 0, 1)
 
 
 class Layer:
@@ -20,7 +20,7 @@ class Layer:
         self.input_size = input_size
         self.weights_number = size * input_size
         self.weights = np.random.randn(size, input_size)
-        self.biases = np.random.randn(size)
+        self.biases = np.random.randn(size, 1)
 
 
 class NeuralNetwork:
@@ -41,13 +41,12 @@ class NeuralNetwork:
         for e in range(epochs):
             print("epoch_{}: {}%".format(e, self.accuracy))
             current_learning_rate = learning_rate / (1 + e * decay)
+            for X, y in batches:
+                self._train_batch(X, y, current_learning_rate)
 
     def step_forward(self, samples, layer):
-        activation_output = []
-        for i, neuron_weights in enumerate(layer.weights):
-            a = neuron_weights.dot(samples) + layer.biases[i]
-            activation_output.append(ReLu(a))
-        return activation_output
+        activation_output = layer.weights.dot(samples) + layer.biases
+        return ReLu(activation_output)
 
     def predict(self, samples):
         prediction = samples
