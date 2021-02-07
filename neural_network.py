@@ -1,6 +1,7 @@
 """
 File with all code for neural network
 """
+import math
 import numpy as np
 
 
@@ -18,8 +19,8 @@ class Layer:
         self.activation_fun = activation_function
         self.input_size = input_size
         self.weights_number = size * input_size
-        self.weights = [np.random.randn(input_size) for _ in range(size)]
-        self.biases = [np.random.randn() for _ in range(size)]
+        self.weights = np.random.randn(size, input_size)
+        self.biases = np.random.randn(size)
 
 
 class NeuralNetwork:
@@ -34,10 +35,14 @@ class NeuralNetwork:
         self.layers_number = 3
         self.accuracy = 0
 
-    def train(self, samples, labels, epochs):
-        pass
+    def train(self, samples, labels, epochs, test_x=None, test_y=None, batch_size=1, learning_rate=0.1, decay=0.1):
+        n = batch_size
+        batches = [(samples[n * i: n * (i + 1)], labels[n * i: n * (i + 1)]) for i in range(math.ceil(len(samples) / n))]
+        for e in range(epochs):
+            print("epoch_{}: {}%".format(e, self.accuracy))
+            current_learning_rate = learning_rate / (1 + e * decay)
 
-    def forward_propagation(self, samples, layer):
+    def step_forward(self, samples, layer):
         activation_output = []
         for i, neuron_weights in enumerate(layer.weights):
             a = neuron_weights.dot(samples) + layer.biases[i]
@@ -47,5 +52,5 @@ class NeuralNetwork:
     def predict(self, samples):
         prediction = samples
         for layer in self.layers:
-            prediction = self.forward_propagation(prediction, layer)
+            prediction = self.step_forward(prediction, layer)
         return tuple(prediction)
