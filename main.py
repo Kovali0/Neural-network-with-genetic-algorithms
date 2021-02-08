@@ -4,7 +4,9 @@ Main program
 import random
 import numpy as np
 import copy
-from neural_network import NeuralNetwork, Layer
+from neural_network import NeuralNetwork
+# from keras.models import Sequential
+# from keras.layers import Dense
 
 
 def generate_samples(size, mean_x, mean_y, standard_deviation_x, standard_deviation_y):
@@ -13,7 +15,7 @@ def generate_samples(size, mean_x, mean_y, standard_deviation_x, standard_deviat
 
 # Globals
 samples = {0: [], 1: []}
-mean_x = [-1, 1, 4, 7]
+mean_x = [-1, 4, 1, 7]
 mean_y = 2
 std_dev = 1
 for x in range(4):
@@ -26,7 +28,6 @@ for x in range(4):
 for k, v in samples.items():
     samples[k] = np.array(v)
 
-# Globals
 x_train = np.concatenate([s for l, s in samples.items()])
 y_train = np.concatenate([np.repeat(l, s.shape[0]) for l, s in samples.items()])
 population = 50
@@ -34,7 +35,17 @@ mutation_chance = 2
 top_pick = 10
 
 
+# def init_keras_model():
+#     model = Sequential()
+#     model.add(Dense(2, input_dim=8, activation='relu'))
+#     model.add(Dense(3, activation='relu'))
+#     model.add(Dense(2, activation='sigmoid'))
+#     return model
+
+
 def main():
+    """Main with genetic algorithm loops for neural networks.
+    Print results. """
     generation = 0
     best_accuracy = 0.0
     networks = [NeuralNetwork() for _ in range(population)]
