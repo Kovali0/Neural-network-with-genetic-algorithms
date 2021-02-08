@@ -35,21 +35,64 @@ class NeuralNetwork:
         self.layers_number = 3
         self.accuracy = 0
 
-    def train(self, samples, labels, epochs, test_x=None, test_y=None, batch_size=1, learning_rate=0.1, decay=0.1):
+    def train(self, samples, labels, epochs, batch_size=1, learning_rate=0.05, decay=0.1):
+        samples, labels = self._shuffle(samples.T, labels.T)
         n = batch_size
-        batches = [(samples[n * i: n * (i + 1)], labels[n * i: n * (i + 1)]) for i in range(math.ceil(len(samples) / n))]
+        batches = [(samples[:, n * i: n * (i + 1)], labels[n * i: n * (i + 1)]) for i in range(math.ceil(len(samples) / n))]
         for e in range(epochs):
+            self.calculate_accuracy(samples, labels)
             print("epoch_{}: {}%".format(e, self.accuracy))
             current_learning_rate = learning_rate / (1 + e * decay)
             for X, y in batches:
-                self._train_batch(X, y, current_learning_rate)
+                next_input = X
+                weighted_inputs = []
+                activations = [np.copy(next_input)]
+                for layer in self.layers:
+                    next_input, weighted_sum = self._step_forward(next_input, layer, with_weighted_sum=True)
+                    weighted_inputs.append(weighted_sum)
+                    activations.append(next_input)
+                dw, db = self.backpropagation(y, weighted_inputs, activations)
+                for idx, layer in enumerate(self.layers):
+                    layer.weights += current_learning_rate * dw[idx]
+                    layer.biases += current_learning_rate * db[idx]
 
-    def step_forward(self, samples, layer):
-        activation_output = layer.weights.dot(samples) + layer.biases
-        return ReLu(activation_output)
+    def backpropagation(self, labels, weighted_inputs, activations):
+        deltas = [None] * len(self.layers)
+        ones = np.ones(labels.shape)
+        zeros = np.zeros(labels.shape)
+        y = np.where(labels > 0, [ones, zeros], [zeros, ones])
+        print(y)
+        print(activations[-1])
+        print(activations[-1] - y)
+        print(ReLu_Derivative(weighted_inputs[-1]))
+        deltas[-1] = (y - activations[-1]) * ReLu_Derivative(weighted_inputs[-1])
+        for i in reversed(range(len(deltas) - 1)):
+            deltas[i] = self.layers[i + 1].weights.T.dot(deltas[i + 1]) * ReLu_Derivative(weighted_inputs[i])
+        batch_size = labels.shape[0]
+        delta_bias = [d.dot(np.ones((batch_size, 1))) / float(batch_size) for d in deltas]
+        delta_weights = [d.dot(activations[i].T) / float(batch_size) for i, d in enumerate(deltas)]
+        return delta_weights, delta_bias
+
+    def _shuffle(self, samples, labels):
+        indices = np.random.permutation(labels.shape[0])
+        return np.array(samples[:, indices]), np.array(labels[indices])
+
+    def _step_forward(self, samples, layer, *, with_weighted_sum=None):
+        weighted_sum = layer.weights.dot(samples) + layer.biases
+        if with_weighted_sum:
+            return ReLu(weighted_sum), weighted_sum
+        else:
+            return ReLu(weighted_sum)
 
     def predict(self, samples):
         prediction = samples
         for layer in self.layers:
-            prediction = self.step_forward(prediction, layer)
+            prediction = self._step_forward(prediction, layer)
         return tuple(prediction)
+
+    def calculate_accuracy(self, samples, labels):
+        pred_1, pred_2 = self.predict(samples)
+        pred = np.where(pred_1 > pred_2, 1, 0)
+        results = np.where(pred == labels, 1, 0)
+        self.accuracy = np.mean(results)
+        return self.accuracy

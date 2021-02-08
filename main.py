@@ -13,7 +13,7 @@ def generate_samples(size, mean_x, mean_y, standard_deviation_x, standard_deviat
 
 # Globals
 samples = {0: [], 1: []}
-mean_x = [-1, 25, -3, 7]
+mean_x = [-1, 4, -3, 7]
 mean_y = 2
 std_dev = 1
 for x in range(4):
@@ -21,7 +21,7 @@ for x in range(4):
         label = 0
     else:
         label = 1
-    samples[label].extend(generate_samples(50, mean_x[x], mean_y, std_dev, std_dev))
+    samples[label].extend(generate_samples(100, mean_x[x], mean_y, std_dev, std_dev))
 
 for k, v in samples.items():
     samples[k] = np.array(v)
@@ -39,21 +39,22 @@ def main():
     best_accuracy = 0.0
     networks = [NeuralNetwork() for _ in range(population)]
     best_weights = []
+    best_biases = []
 
     while best_accuracy < 0.9 and generation < 100:
         generation += 1
         print("========== Generation number ", generation, " ==========")
 
         for nn in networks:
-            pred_1, pred_2 = nn.predict(x_train.T)
-            pred = np.where(pred_1 > pred_2, 1, 0)
-            results = np.where(pred == y_train, 1, 0)
-            nn.accuracy = np.mean(results)
-            if nn.accuracy > best_accuracy:
-                best_accuracy = nn.accuracy
-                print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$Best Accuracy: ', best_accuracy)
-                for layer in networks[0].layers:
+            current_accuracy = nn.calculate_accuracy(x_train.T, y_train)
+            if current_accuracy > best_accuracy:
+                best_accuracy = current_accuracy
+                print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Best Accuracy: ', best_accuracy)
+                best_weights.clear()
+                best_biases.clear()
+                for layer in nn.layers:
                     best_weights.append(layer.weights)
+                    best_biases.append(layer.biases)
 
         networks = sorted(networks, key=lambda z: z.accuracy, reverse=True)
         print(networks[0].layers[0].weights)
@@ -70,17 +71,27 @@ def main():
                         neuron[locus] = nn2.layers[idx].weights[index][locus]
                         nn2.layers[idx].weights[index][locus] = tmp
                         if random.randint(0, 100) < mutation_chance:
-                            print("MUTATION!")
+                            # print("MUTATION!")
                             # layer.weights[locus] = np.negative(layer.weights[locus])
-                            #layer.weights[locus] = np.random.randn(np.size(layer.weights[locus]))
+                            # layer.weights[locus] = np.random.randn(np.size(layer.weights[locus]))
                             neuron[locus] = np.random.randn()
                 new_generation.append(nn1)
                 new_generation.append(nn2)
         networks.clear()
         networks = copy.deepcopy(new_generation)
 
-    print("Over 0.90 accuracy")
+    print("Selection accuracy: ")
     print(best_accuracy)
+
+    genetic_nn = NeuralNetwork()
+    for idx, layer in enumerate(genetic_nn.layers):
+        layer.weights = best_weights[idx]
+        layer.biases = best_biases[idx]
+    genetic_nn.train(x_train, y_train, 10, 10)
+    genetic_nn.calculate_accuracy(x_train.T, y_train)
+
+    print("Prediction accuracy: ")
+    print(genetic_nn.accuracy)
 
 
 if __name__ == '__main__':
