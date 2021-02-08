@@ -13,11 +13,27 @@ def ReLu_Derivative(x):
     return np.where(x <= 0, 0, 1)
 
 
+def Heaviside(x):
+    return np.where(x >= 0.0,  1.0, 0.0)
+
+
+def Heaviside_Derivative(x):
+    return np.ones(x.shape)
+
+
+def Sigmoid(x):
+    return np.where(x > 0, 1 / 1 + np.exp(-x), np.exp(x) / (1 + np.exp(x)))
+
+
+def Sigmoid_Derivative(x):
+    return Sigmoid(x) * (1 - Sigmoid(x))
+
+
 class Layer:
     def __init__(self, size, activation_function, input_size):
         self.size = size
         self.activation_fun = activation_function
-        self.input_size = input_size
+        self.input_size = input_size 
         self.weights_number = size * input_size
         self.weights = np.random.randn(size, input_size)
         self.biases = np.random.randn(size, 1)
@@ -25,9 +41,9 @@ class Layer:
 
 class NeuralNetwork:
     def __init__(self):
-        self.l1 = Layer(2, 0, 2)
-        self.l2 = Layer(3, 0, self.l1.size)
-        self.l3 = Layer(2, 0, self.l2.size)
+        self.l1 = Layer(2, ReLu, 2)
+        self.l2 = Layer(3, ReLu, self.l1.size)
+        self.l3 = Layer(2, Heaviside, self.l2.size)
         self.layers = []
         self.layers.append(self.l1)
         self.layers.append(self.l2)
@@ -35,10 +51,10 @@ class NeuralNetwork:
         self.layers_number = 3
         self.accuracy = 0
 
-    def train(self, samples, labels, epochs, batch_size=1, learning_rate=0.05, decay=0.1):
+    def train(self, samples, labels, epochs, batch_size=1, learning_rate=0.01, decay=0.1):
         samples, labels = self._shuffle(samples.T, labels.T)
         n = batch_size
-        batches = [(samples[:, n * i: n * (i + 1)], labels[n * i: n * (i + 1)]) for i in range(math.ceil(len(samples) / n))]
+        batches = [(samples[:, n * i: n * (i + 1)], labels[n * i: n * (i + 1)]) for i in range(math.ceil(samples.shape[1] / n))]
         for e in range(epochs):
             self.calculate_accuracy(samples, labels)
             print("epoch_{}: {}%".format(e, self.accuracy))
@@ -61,14 +77,16 @@ class NeuralNetwork:
         ones = np.ones(labels.shape)
         zeros = np.zeros(labels.shape)
         y = np.where(labels > 0, [ones, zeros], [zeros, ones])
-        print(y)
-        print(activations[-1])
-        print(activations[-1] - y)
-        print(ReLu_Derivative(weighted_inputs[-1]))
-        deltas[-1] = (y - activations[-1]) * ReLu_Derivative(weighted_inputs[-1])
+        #print(y)
+        #print(activations[-1])
+        #print(activations[-1] - y)
+        #print(ReLu_Derivative(weighted_inputs[-1]))
+        deltas[-1] = (y - activations[-1]) * Heaviside_Derivative(weighted_inputs[-1])
         for i in reversed(range(len(deltas) - 1)):
             deltas[i] = self.layers[i + 1].weights.T.dot(deltas[i + 1]) * ReLu_Derivative(weighted_inputs[i])
         batch_size = labels.shape[0]
+        #print("===========")
+        #print(batch_size)
         delta_bias = [d.dot(np.ones((batch_size, 1))) / float(batch_size) for d in deltas]
         delta_weights = [d.dot(activations[i].T) / float(batch_size) for i, d in enumerate(deltas)]
         return delta_weights, delta_bias
@@ -80,9 +98,9 @@ class NeuralNetwork:
     def _step_forward(self, samples, layer, *, with_weighted_sum=None):
         weighted_sum = layer.weights.dot(samples) + layer.biases
         if with_weighted_sum:
-            return ReLu(weighted_sum), weighted_sum
+            return layer.activation_fun(weighted_sum), weighted_sum
         else:
-            return ReLu(weighted_sum)
+            return layer.activation_fun(weighted_sum)
 
     def predict(self, samples):
         prediction = samples

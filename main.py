@@ -13,7 +13,7 @@ def generate_samples(size, mean_x, mean_y, standard_deviation_x, standard_deviat
 
 # Globals
 samples = {0: [], 1: []}
-mean_x = [-1, 4, -3, 7]
+mean_x = [-1, 1, 4, 7]
 mean_y = 2
 std_dev = 1
 for x in range(4):
