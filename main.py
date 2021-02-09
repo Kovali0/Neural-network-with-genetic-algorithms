@@ -52,10 +52,12 @@ def main():
     best_weights = []
     best_biases = []
 
+    """Main genetic loop"""
     while best_accuracy < 0.9 and generation < 100:
         generation += 1
         print("========== Generation number ", generation, " ==========")
 
+        """Fitness in genetic - nn accuracy and choice of best one"""
         for nn in networks:
             current_accuracy = nn.calculate_accuracy(x_train.T, y_train)
             if current_accuracy > best_accuracy:
@@ -67,9 +69,11 @@ def main():
                     best_weights.append(layer.weights)
                     best_biases.append(layer.biases)
 
+        """Sort networks by fitness function value"""
         networks = sorted(networks, key=lambda z: z.accuracy, reverse=True)
         print(networks[0].layers[0].weights)
 
+        """Pick top individuals and make crossovers also with some chance to mutation"""
         new_generation = []
         for i in range(top_pick):
             for j in range(population//top_pick):
@@ -94,6 +98,7 @@ def main():
     print("Selection accuracy: ")
     print(best_accuracy)
 
+    """Create new network and set start weights and biases to the best from genetic"""
     genetic_nn = NeuralNetwork()
     for idx, layer in enumerate(genetic_nn.layers):
         layer.weights = best_weights[idx]
