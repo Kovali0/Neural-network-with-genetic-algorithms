@@ -4,7 +4,7 @@ This program is an university project, which focus on combination of the genetic
 
 Diagram of genetic algorithm created for the purpose of this project:
 
-<img src="gen_algo_diagram.png" alt="menu_background" style="zoom:80%;" />
+<img src="gen_algo_diagram.png" alt="algo diagram" style="zoom:80%;" />
 
 ## Program structure
 
